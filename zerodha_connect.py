@@ -5,9 +5,9 @@ import requests
 
 log = logging.getLogger(__name__)
 
-base_url = "https://kite.zerodha.com"
-login_url = "https://kite.zerodha.com/api/login"
-twofa_url = "https://kite.zerodha.com/api/twofa"
+BASE_URL = "https://kite.zerodha.com"
+LOGIN_URL = "https://kite.zerodha.com/api/login"
+TWOFA_URL = "https://kite.zerodha.com/api/twofa"
 
 
 class ZerodhaConnection:
@@ -28,31 +28,33 @@ class ZerodhaConnection:
         self.reqsession.headers.update(headers)
         self.chunkjs = {}
 
+        self.login()
+
     _default_root_uri = "https://kite.zerodha.com"
 
     def load_session(self, path=None):
         self.enc_token = self.reqsession.cookies['enctoken']
 
-    def _user_agent(self):
+    def _user_agent(self) -> str:
         return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36"
 
-    def login_step1(self):
-        self.r = self.reqsession.get(base_url)
-        self.r = self.reqsession.post(login_url,
+    def login_step1(self) -> dict:
+        self.r = self.reqsession.get(BASE_URL)
+        self.r = self.reqsession.post(LOGIN_URL,
                                       data={"user_id": self.userId,
                                             "password": self.password})
         j = json.loads(self.r.text)
         return j
 
-    def login_step2(self, j):
+    def login_step2(self, j) -> dict:
         data = {"user_id": self.userId,
                 "request_id": j['data']["request_id"],
                 "twofa_value": self.twofa}
-        self.r = self.s.post(twofa_url, data=data)
+        self.r = self.s.post(TWOFA_URL, data=data)
         j = json.loads(self.r.text)
         return j
 
-    def login(self):
+    def login(self) -> dict:
         j = self.login_step1()
         if j['status'] == 'error':
             raise Exception(j['message'])
@@ -61,130 +63,105 @@ class ZerodhaConnection:
         if j['status'] == 'error':
             raise Exception(j['message'])
         self.enc_token = self.r.cookies['enctoken']
-        print(self.enc_token)
+
         return j
 
-    def oms_headers(self):
-        h = {'authorization': f"enctoken {self.enc_token}", 'referer': 'https://kite.zerodha.com/dashboard',
-             'x-kite-version': '2.4.0', 'sec-fetch-site': 'same-origin', 'sec-fetch-mode': 'cors',
-             'sec-fetch-dest': 'empty', 'x-kite-userid': self.userId}
-        return h
+    def oms_headers(self) -> dict:
+        return {'authorization': f"enctoken {self.enc_token}", 'referer': 'https://kite.zerodha.com/dashboard',
+                'x-kite-version': '2.4.0', 'sec-fetch-site': 'same-origin', 'sec-fetch-mode': 'cors',
+                'sec-fetch-dest': 'empty', 'x-kite-userid': self.userId}
 
     def profile(self):
-        import requests
 
-        url = "https://kite.zerodha.com/oms/user/profile/full"
-
-        payload = {}
-
-        response = requests.request("GET", url, headers=self.oms_headers(), data=payload)
-
-        print(response.text)
-        return response.text
+        return requests.request("GET",
+                                BASE_URL + "/oms/user/profile/full",
+                                headers=self.oms_headers(),
+                                data={})
 
     def position(self):
-        import requests
-
-        url = "https://kite.zerodha.com/oms/portfolio/positions"
-
-        payload = {}
-
-        response = requests.request("GET", url, headers=self.oms_headers(), data=payload)
-
-        print(response.text)
+        return requests.request("GET",
+                                BASE_URL + "/oms/portfolio/positions",
+                                headers=self.oms_headers(),
+                                data={})
 
     def holdings(self):
-        import requests
 
-        url = "https://kite.zerodha.com/oms/portfolio/holdings"
-
-        payload = {}
-
-        response = requests.request("GET", url, headers=self.oms_headers(), data=payload)
-
-        print(response.text)
+        return requests.request("GET",
+                                BASE_URL + "/oms/portfolio/holdings",
+                                headers=self.oms_headers(),
+                                data={})
 
     def MarketWatch(self):
-        import requests
 
-        url = "https://kite.zerodha.com/api/marketwatch"
-
-        payload = {}
-
-        response = requests.request("GET", url, headers=self.oms_headers(), data=payload)
-
-        print(response.text)
+        return requests.request("GET",
+                                BASE_URL + "/api/marketwatch",
+                                headers=self.oms_headers(),
+                                data={})
 
     def marketOverview(self):
-        import requests
 
-        url = "https://kite.zerodha.com/api/market-overview"
-
-        payload = {}
-
-        response = requests.request("GET", url, headers=self.oms_headers(), data=payload)
-
-        print(response.text)
+        return requests.request("GET",
+                                BASE_URL + "/api/market-overview",
+                                headers=self.oms_headers(),
+                                data={})
 
     # get funds
     def margin(self):
-        import requests
 
-        url = "https://kite.zerodha.com/oms/user/margins"
-
-        payload = {}
-
-        response = requests.request("GET", url, headers=self.oms_headers(), data=payload)
-
-        print(response.text)
+        return requests.request("GET",
+                                BASE_URL + "/oms/user/margins",
+                                headers=self.oms_headers(),
+                                data={})
 
     def orders(self):
-        import requests
 
-        url = "https://kite.zerodha.com/oms/orders"
+        return requests.request("GET",
+                                BASE_URL + "/oms/orders",
+                                headers=self.oms_headers(),
+                                data={})
 
-        payload = {}
+    def _order(self,
+               URL: str,
+               params: str):
 
-        response = requests.request("GET", url,
-                                    headers=self.oms_headers(), data=payload)
+        return requests.request("POST",
+                                URL,
+                                headers=self.oms_headers(),
+                                data=params)
 
-        print(response.text)
+    def place_order(self,
+                    type: str,
+                    variety: str,
+                    exchange: str,
+                    tradingsymbol: str,
+                    transaction_type: str,
+                    quantity: int,
+                    product: str,
+                    order_type: str,
+                    price: float = None,
+                    validity: str = None,
+                    disclosed_quantity: int = None,
+                    trigger_price: float = None,
+                    squareoff: float = None,
+                    stoploss: float = None,
+                    trailing_stoploss: float = None,
+                    tag=None
+                    ):
+        params = locals()
+        del (params['self'])
 
-    def cost(self,
-             exchange,
-             trading_symbol,
-             transaction_type,
-             variety,
-             product,
-             order_type,
-             quantity,
-             price):
-        import requests
+        for k in list(params.keys()):
+            if params[k] is None:
+                del (params[k])
+        if type == 'place_order':
+            URL = BASE_URL + '/oms/nudge/orders'
+        if type == 'cost':
+            URL = BASE_URL + '/oms/margins/orders'
 
-        url = "https://kite.zerodha.com/oms/margins/orders"
+        del (params['type'])
 
-        payload = [{"exchange": exchange,
-                    "tradingsymbol": trading_symbol,
-                    "transaction_type": transaction_type,
-                    "variety": variety,
-                    "product": product,
-                    "order_type": order_type,
-                    "quantity": quantity,
-                    "price": price
-
-                    }]
-
-        payload = json.dumps(payload)
-
-        response = requests.request("POST", url, headers=self.oms_headers(), data=payload)
-
-        print(response.text)
+        return self._order(URL,
+                           json.dumps([params]))
 
     def main(self):
         self.login()
-
-
-
-
-
-
