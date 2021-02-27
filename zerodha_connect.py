@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 
 import requests
 
@@ -161,7 +162,25 @@ class ZerodhaConnection:
         del (params['type'])
 
         return self._order(URL,
-                           json.dumps([params]))
+                           params=json.dumps([params])
+                           )
+
+    def chart(self,
+              instrument,
+              timeframe,
+              from_time,
+              to_time):
+
+        return requests.request('GET',
+                                BASE_URL + f"/oms/instruments/historical/{instrument}/{timeframe}?user_id={self.userId}&oi=1&"
+                                           f"from={from_time}&to={to_time}&ciqrandom={time.time() * 1000}",
+                                headers=self.oms_headers()
+                                )
+
+    def instrument(self):
+        return requests.request('GET',
+                                'https://api.kite.trade/instruments',
+                                headers=self.oms_headers())
 
     def main(self):
         self.login()
