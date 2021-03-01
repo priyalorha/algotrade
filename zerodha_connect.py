@@ -172,7 +172,7 @@ class ZerodhaConnection:
               to_time):
 
         return requests.request('GET',
-                                BASE_URL + f"/oms/instruments/historical/{instrument}/{timeframe}?user_id={self.userId}&oi=1&"
+                                BASE_URL + f"/oms/instruments/historical/{instrument}/15minute?user_id={self.userId}&oi=1&"
                                            f"from={from_time}&to={to_time}&ciqrandom={time.time() * 1000}",
                                 headers=self.oms_headers()
                                 )
@@ -184,3 +184,11 @@ class ZerodhaConnection:
 
     def main(self):
         self.login()
+
+    def instrument_to_csv(self):
+        response = self.instrument().text
+        file1 = open("instrument.csv", "w")
+        file1.write(response)
+        file1.close()
+
+        return response
